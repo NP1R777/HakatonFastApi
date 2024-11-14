@@ -6,8 +6,8 @@ from src.group_event.schemas import GroupEventIn
 router = APIRouter()
 
 
-@router.get(
-    "event/create_group_event",
+@router.post(
+    "/event/create_group_event",
     response_model=GroupEventIn,
     description="Создание групп мероприятий в базе данных",
     summary="Создание групп мероприятий в базе данных"
