@@ -27,6 +27,7 @@ async def create_event(
     )
     db_connect.add(event_add)
     await db_connect.flush()
+    await db_connect.refresh(event_add)
     return Event(
         name=event_add.name,
         description=event_add.description,
