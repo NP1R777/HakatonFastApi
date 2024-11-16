@@ -1,5 +1,5 @@
 from pydantic import BaseModel
 
-class GroupEvent(BaseModel):
+class GroupEventIn(BaseModel):
     name: str
     description: str

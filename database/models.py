@@ -1,6 +1,6 @@
 from datetime import datetime, date
 from sqlalchemy.schema import MetaData
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import DATE, ARRAY, ForeignKey
 from sqlalchemy import Integer, Boolean, String, VARCHAR, TIMESTAMP, text, Column
 
@@ -14,9 +14,10 @@ convention = {
 
 NOW_AT_UTC = text("timezone('utc', now())")
 
-metadata = MetaData(naming_convention=convention)
+class Base(DeclarativeBase):
+    pass
 
-Base = declarative_base(metadata=metadata)
+metadata = MetaData(naming_convention=convention)
 
 
 class User(Base):
@@ -37,11 +38,13 @@ class User(Base):
 class GroupsEvent(Base):
     __tablename__ = "group_event"
     id: int = Column(Integer, primary_key=True)
-    created_at: datetime = Column(TIMESTAMP, nullable=False, autoincrement=True)
-    update_at: datetime = Column(TIMESTAMP, nullable=False, autoincrement=True)
-    deleted_at: datetime = Column(TIMESTAMP)
+    created_at: datetime = Column(TIMESTAMP(timezone=False), server_default=NOW_AT_UTC,
+                                            nullable=True, autoincrement=True)
+    update_at: datetime = Column(TIMESTAMP(timezone=False), server_default=NOW_AT_UTC,
+                                            nullable=True, autoincrement=True)
+    deleted_at: datetime = Column(TIMESTAMP, nullable=True)
     name: str = Column(VARCHAR, nullable=False)
-    description: str = Column(VARCHAR)
+    description: str = Column(VARCHAR, nullable=True)
 
 
 class UsersGroup(Base):
