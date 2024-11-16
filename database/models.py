@@ -1,8 +1,11 @@
+from enum import Enum as Enum1
 from datetime import datetime, date
+from src.event.enums import Location
 from sqlalchemy.schema import MetaData
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import DATE, ARRAY, ForeignKey
-from sqlalchemy import Integer, Boolean, String, VARCHAR, TIMESTAMP, text, Column
+from sqlalchemy import Integer, Boolean, String, VARCHAR, TIMESTAMP, text, Column, Enum
+
 
 convention = {
     "ix": "ix_%(column_0_label)s",
@@ -60,16 +63,18 @@ class UsersGroup(Base):
 class Events(Base):
     __tablename__ = "event"
     id: int = Column(Integer, primary_key=True)
-    created_at: datetime = Column(TIMESTAMP, nullable=False, autoincrement=True)
-    update_at: datetime = Column(TIMESTAMP, nullable=False, autoincrement=True)
-    deleted_at: datetime = Column(TIMESTAMP)
+    created_at: datetime = Column(TIMESTAMP(timezone=False), server_default=NOW_AT_UTC,
+                                            nullable=True, autoincrement=True)
+    update_at: datetime = Column(TIMESTAMP(timezone=False), server_default=NOW_AT_UTC,
+                                            nullable=True, autoincrement=True)
+    deleted_at: datetime = Column(TIMESTAMP, nullable=True)
     name: str = Column(VARCHAR, nullable=False)
     description: str = Column(VARCHAR)
     group_id: int = Column(Integer, ForeignKey("group_event.id"), nullable=False)
     external_url: int = Column(VARCHAR)
     date_start: date = Column(DATE)
     date_end: date = Column(DATE)
-    location: str = Column(String)
+    location: Location = Column(Enum(Location)) # ЗАТЫК!!!
     is_cyclically: bool = Column(Boolean)
 
 

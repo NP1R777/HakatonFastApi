@@ -5,4 +5,4 @@ class Location(Enum):
     city2 = "Кайеркан"
     city3 = "Оганер"
     city4 = "Талнах"
-    city = "Дудинка"
+    city5 = "Дудинка"

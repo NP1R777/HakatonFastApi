@@ -1,4 +1,5 @@
 import hashlib
+from datetime import datetime
 from jose import jwt, JWTError
 from database.models import User
 from sqlalchemy import and_, select
@@ -157,3 +158,40 @@ async def refresh(
         )
     except JWTError:
         raise HTTPException(status_code=401, detail="Невалидный refresh token")
+
+
+@router.post(
+    "/user/delete_user",
+    description="Удаление пользователя из базы данных",
+    responses = {
+        200: {"description": "Мероприятие успешно удалено"},
+        500: {"description": "Мероприятие не было найдено"}
+    }
+
+)
+async def delete_user(
+        id: int,
+        db_connect: AsyncSession = Depends(get_db),
+):
+    user_data: User = (await db_connect.execute(select(User).filter(User.id == id,
+                                                                    User.deleted_at.is_(None)))).scalar()
+    if not user_data:
+        return HTTPException(status_code=404, detail="Пользователь с таким id не найден или уже удалён")
+    else:
+        user_data.deleted_at = datetime.now()
+        return {"message": "Пользователь успешно удалён!"}
+
+
+@router.post(
+    "user/change_data",
+    description="Смена данных существующего пользователя",
+    responses={
+        200: {"description": "Данные успешно изменены!"},
+        500: {"description": "Данные изменить не удалось"}
+    }
+)
+async def change_data(
+        user: UserOut.Create,
+        db_connect: AsyncSession = Depends(get_db),
+):
+    ...
