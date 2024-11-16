@@ -74,7 +74,7 @@ class Events(Base):
     external_url: int = Column(VARCHAR)
     date_start: date = Column(DATE)
     date_end: date = Column(DATE)
-    location: Location = Column(Enum(Location)) # ЗАТЫК!!!
+    location: Location = Column(Enum(Location))
     is_cyclically: bool = Column(Boolean)
 
 

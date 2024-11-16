@@ -28,10 +28,6 @@ def upgrade() -> None:
                existing_type=postgresql.TIMESTAMP(),
                nullable=True,
                autoincrement=True)
-    op.alter_column('event', 'location',
-               existing_type=sa.VARCHAR(),
-               type_=sa.Enum('city1', 'city2', 'city3', 'city4', 'city5', name='location'),
-               existing_nullable=True)
     # ### end Alembic commands ###
 
 
