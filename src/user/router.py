@@ -7,8 +7,8 @@ from core.settings import AppSettings
 from core.session import get_db, get_settings
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, HTTPException
-from src.user.schemas import UserIn, UserOut, TokenResponse
 from src.user.auth import create_refresh_token, create_access_token
+from src.user.schemas import UserIn, UserOut, TokenResponse, UserUpdate
 from src.dependencies.autentification import get_token_payload, get_current_user
 
 
@@ -163,6 +163,7 @@ async def refresh(
 @router.post(
     "/user/delete_user",
     description="Удаление пользователя из базы данных",
+    summary="Удаление пользователей из базы данных",
     responses = {
         200: {"description": "Мероприятие успешно удалено"},
         500: {"description": "Мероприятие не было найдено"}
@@ -183,15 +184,38 @@ async def delete_user(
 
 
 @router.post(
-    "user/change_data",
-    description="Смена данных существующего пользователя",
+    "/user/change_data",
+    description="Изменение данных существующего пользователя",
+    summary="Изменение данных существующего пользователя",
     responses={
         200: {"description": "Данные успешно изменены!"},
         500: {"description": "Данные изменить не удалось"}
     }
 )
 async def change_data(
-        user: UserOut.Create,
+        id: int,
+        user_update: UserUpdate,
         db_connect: AsyncSession = Depends(get_db),
 ):
-    ...
+    user_data: User = (await db_connect.execute(select(User).filter(User.id == id))).scalar()
+    if not user_data:
+        return HTTPException(status_code=404, detail="Пользователь не найден!")
+    else:
+        if user_update.username is not None:
+            user_data.username = user_update.username
+
+        if user_update.password is not None:
+            user_data.password_hash = hashlib.sha256(user_update.password.encode()).hexdigest()
+
+        if user_update.phone is not None:
+            user_data.phone = user_update.phone
+
+        if user_update.preferences is not None:
+            user_data.preferences = user_update.preferences
+
+        user_data.update_at = datetime.now()
+
+        await db_connect.commit()
+        await db_connect.refresh(user_data)
+
+        return {"message": "Данные пользователя успешно изменены!"}

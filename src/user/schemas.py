@@ -40,6 +40,13 @@ class UserOut:
         refresh_token: str
 
 
+class UserUpdate(BaseModel):
+    username: None
+    password: None
+    phone: None
+    preferences: List[None]
+
+
 class TokenResponse(BaseModel):
     user_id: int
     username: str
