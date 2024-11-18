@@ -24,7 +24,8 @@ async def create_event(
     event_add = Events(
         name=event_data['name'],
         description=event_data['description'],
-        location=event_data['location']
+        location=event_data['location'],
+        group_id=event_data['group_id']
     )
     db_connect.add(event_add)
     await db_connect.flush()
@@ -32,5 +33,6 @@ async def create_event(
     return EventIn(
         name=event_add.name,
         description=event_add.description,
-        location=event_add.location
+        location=event_add.location,
+        group_id=event_add.group_id
     )

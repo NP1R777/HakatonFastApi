@@ -6,7 +6,7 @@ from sqlalchemy import and_, select
 from core.settings import AppSettings
 from core.session import get_db, get_settings
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response, Request
 from src.user.auth import create_refresh_token, create_access_token
 from src.user.schemas import UserIn, UserOut, TokenResponse, UserUpdate
 from src.dependencies.autentification import get_token_payload, get_current_user
@@ -74,6 +74,7 @@ async def register(
 )
 async def login(
         user_in: UserIn.Login,
+        response: Response,
         db_connect: AsyncSession = Depends(get_db),
         settings: AppSettings = Depends(get_settings)
 ) -> TokenResponse:
@@ -92,6 +93,16 @@ async def login(
     if not user:
         raise HTTPException(status_code=404, detail="Не найден пользователь")
     access_token = create_access_token(user.id, settings=settings)
+    user.refresh_token = create_refresh_token(user.id, settings=settings)
+    response.set_cookie(
+        key="refresh_token",
+        value=user.refresh_token,
+        httponly=True,
+        max_age=3600,
+        secure=True,
+        samesite="Lax"
+    )
+
     if access_token:
         return TokenResponse(
             user_id=user.id,
@@ -100,7 +111,6 @@ async def login(
             refresh_token=user.refresh_token,
             token_type='bearer'
         )
-
 
 
 
@@ -140,15 +150,32 @@ async def me(
 )
 async def refresh(
         refresh_token: str,
+        request: Request,
+        response: Response,
         db_connect: AsyncSession = Depends(get_db),
         settings: AppSettings = Depends(get_settings)
 ) -> TokenResponse:
+    refresh_token = request.cookies.get(refresh_token)
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="Невалидный refresh token")
     try:
         payload = jwt.decode(refresh_token, settings.jwt_key, algorithms=settings.jwt_algorithm)
         user = (await db_connect.execute(select(User).filter(User.id == payload.get("user_id")))).scalar()
         if not user:
             raise HTTPException(status_code=401, detail="Невалидный refresh token")
         new_access_token = create_access_token(user.id, settings=settings)
+        new_refresh_token = create_refresh_token(user.id, settings=settings)
+        user.refresh_token = new_refresh_token
+
+        response.set_cookie(
+            key="refresh_token",
+            value=user.refresh_token,
+            httponly=True,
+            max_age=3600,
+            secure=True,
+            samesite="Lax"
+        )
+
         return TokenResponse(
             user_id=user.id,
             username=user.username,
@@ -158,6 +185,7 @@ async def refresh(
         )
     except JWTError:
         raise HTTPException(status_code=401, detail="Невалидный refresh token")
+
 
 
 @router.post(
@@ -183,6 +211,7 @@ async def delete_user(
         return {"message": "Пользователь успешно удалён!"}
 
 
+
 @router.post(
     "/user/change_data",
     description="Изменение данных существующего пользователя",
@@ -201,16 +230,16 @@ async def change_data(
     if not user_data:
         return HTTPException(status_code=404, detail="Пользователь не найден!")
     else:
-        if user_update.username is not None:
+        if user_update.username != "string":
             user_data.username = user_update.username
 
-        if user_update.password is not None:
+        if user_update.password != "string":
             user_data.password_hash = hashlib.sha256(user_update.password.encode()).hexdigest()
 
-        if user_update.phone is not None:
+        if user_update.phone != "string":
             user_data.phone = user_update.phone
 
-        if user_update.preferences is not None:
+        if user_update.preferences != [0]:
             user_data.preferences = user_update.preferences
 
         user_data.update_at = datetime.now()

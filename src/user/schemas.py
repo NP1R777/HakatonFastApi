@@ -41,10 +41,10 @@ class UserOut:
 
 
 class UserUpdate(BaseModel):
-    username: None
-    password: None
-    phone: None
-    preferences: List[None]
+    username: str | None
+    password: str | None
+    phone: str | None
+    preferences: List[int] | None
 
 
 class TokenResponse(BaseModel):
