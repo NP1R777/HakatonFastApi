@@ -1,4 +1,3 @@
-from enum import Enum as Enum1
 from datetime import datetime, date
 from src.event.enums import Location
 from sqlalchemy.schema import MetaData
