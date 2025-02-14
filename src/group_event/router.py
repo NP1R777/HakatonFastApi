@@ -10,8 +10,12 @@ router = APIRouter()
 @router.post(
     "/event/create_group_event",
     response_model=GroupEventIn,
-    description="Создание групп мероприятий в базе данных",
-    summary="Создание групп мероприятий в базе данных"
+    description="Добавление новых категорий в базу данных",
+    summary="Добавление новых категорий в базу данных",
+    responses={
+        200: {"description": "Категория успешно создана"},
+        500: {"description": "При создании категории произошла ошибка"}
+    }
 )
 async def create_group_event(
         group_event: GroupEventIn,

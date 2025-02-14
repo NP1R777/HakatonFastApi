@@ -1,9 +1,12 @@
-from datetime import datetime, date
+from enum import Enum
 from src.event.enums import Location
 from sqlalchemy.schema import MetaData
+from datetime import datetime, date, time
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import DATE, ARRAY, ForeignKey
-from sqlalchemy import Integer, Boolean, String, VARCHAR, TIMESTAMP, text, Column, Enum
+from sqlalchemy import (Integer, Boolean, String, VARCHAR,
+                        TIMESTAMP, text, Column, Enum as SQLEnum,
+                        LargeBinary, TIME)
 
 
 convention = {
@@ -32,31 +35,11 @@ class User(Base):
     deleted_at: datetime = Column(TIMESTAMP(timezone=False), nullable=True)
     username: str = Column(VARCHAR, nullable=False)
     password_hash: str = Column(VARCHAR, nullable=False)
-    phone: str = Column(String, nullable=False)
     preferences: list = Column(ARRAY(Integer), nullable=True)
     refresh_token: str = Column(String, nullable=True)
-
-
-class GroupsEvent(Base):
-    __tablename__ = "group_event"
-    id: int = Column(Integer, primary_key=True)
-    created_at: datetime = Column(TIMESTAMP(timezone=False), server_default=NOW_AT_UTC,
-                                            nullable=True, autoincrement=True)
-    update_at: datetime = Column(TIMESTAMP(timezone=False), server_default=NOW_AT_UTC,
-                                            nullable=True, autoincrement=True)
-    deleted_at: datetime = Column(TIMESTAMP, nullable=True)
-    name: str = Column(VARCHAR, nullable=False)
-    description: str = Column(VARCHAR, nullable=True)
-
-
-class UsersGroup(Base):
-    __tablename__ = "user_group"
-    id: int = Column(Integer, primary_key=True)
-    created_at: datetime = Column(TIMESTAMP, nullable=False, autoincrement=True)
-    update_at: datetime = Column(TIMESTAMP, nullable=False, autoincrement=True)
-    deleted_at: datetime = Column(TIMESTAMP)
-    main_user: int = Column(Integer, ForeignKey("user.id"))
-    group_members: list = Column(ARRAY(Integer))
+    email: str = Column(String, nullable=True)
+    is_org: bool = Column(Boolean, nullable=True)
+    date_of_birth: str = Column(String, nullable=True)
 
 
 class Events(Base):
@@ -71,10 +54,27 @@ class Events(Base):
     description: str = Column(VARCHAR)
     group_id: int = Column(Integer, ForeignKey("group_event.id"), nullable=False)
     external_url: int = Column(VARCHAR)
-    date_start: date = Column(DATE)
-    date_end: date = Column(DATE)
-    location: Location = Column(Enum(Location))
-    is_cyclically: bool = Column(Boolean)
+    date_event: date = Column(DATE, nullable=True)
+    location: str = Column(String, nullable=True)
+    duration: time = Column(TIME, nullable=True)
+    city: str = Column(String, nullable=True)
+    price: int = Column(Integer, nullable=True)
+    address: str = Column(VARCHAR, nullable=True)
+    age_limit: str = Column(VARCHAR, nullable=True)
+    pictures: bytes = Column(LargeBinary, nullable=True)
+
+
+class GroupsEvent(Base):
+    __tablename__ = "group_event"
+    id: int = Column(Integer, primary_key=True)
+    created_at: datetime = Column(TIMESTAMP(timezone=False), server_default=NOW_AT_UTC,
+                                            nullable=True, autoincrement=True)
+    update_at: datetime = Column(TIMESTAMP(timezone=False), server_default=NOW_AT_UTC,
+                                            nullable=True, autoincrement=True)
+    deleted_at: datetime = Column(TIMESTAMP, nullable=True)
+    name: str = Column(VARCHAR, nullable=False)
+    description: str = Column(VARCHAR, nullable=True)
+    event_id: int = Column(Integer, ForeignKey("event.id"), nullable=True)
 
 
 class UserToEvent(Base):
@@ -85,3 +85,12 @@ class UserToEvent(Base):
     deleted_at: datetime = Column(TIMESTAMP)
     user_id: int = Column(Integer, ForeignKey("user.id"), nullable=False)
     event_id: int = Column(Integer, ForeignKey("event.id"), nullable=False)
+    date_event: date = Column(DATE, nullable=True)
+
+
+class InfoOrg(Base):
+    __tablename__ = "info_org"
+    id: int = Column(Integer, primary_key=True)
+    user_id: int = Column(Integer, ForeignKey("user.id"), nullable=False)
+    organization: str = Column(String, nullable=True)
+    phone_number: str = Column(String, nullable=True)

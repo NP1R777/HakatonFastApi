@@ -21,9 +21,7 @@ router = APIRouter()
     summary="Регистрация нового пользователя системы.",
     responses={
         200: {"description": "Пользователь создан"},
-        500: {
-            "description": "Ошибка создания пользователя",
-        },
+        500: {"description": "Ошибка создания пользователя"},
     }
 )
 async def register(
@@ -35,7 +33,8 @@ async def register(
     user_add = User(
         username=user_data["username"],
         password_hash=hashlib.sha256(user_data["password"].encode()).hexdigest(),
-        phone=user_data["phone"],
+        email=user_data["email"],
+        date_of_birth=user_data["date_of_birth"],
         preferences=user_data["preferences"],
     )
     db_connect.add(user_add)
@@ -48,7 +47,8 @@ async def register(
         deleted_at=user_add.deleted_at,
         id=user_add.id,
         username=user_add.username,
-        phone=user_add.phone,
+        email=user_add.email,
+        date_of_birth=user_add.date_of_birth,
         preferences=user_add.preferences,
     )
 
@@ -140,12 +140,8 @@ async def me(
     response_model=TokenResponse,
     responses={
         200: {"description": "Успешное обновление токена"},
-        500: {
-            "description": "Ошибка обновление токена",
-        },
-        401: {
-            "description": "Невалидный refresh token",
-        },
+        500: {"description": "Ошибка обновление токена"},
+        401: {"description": "Невалидный refresh token"}
     }
 )
 async def refresh(
@@ -155,7 +151,7 @@ async def refresh(
         db_connect: AsyncSession = Depends(get_db),
         settings: AppSettings = Depends(get_settings)
 ) -> TokenResponse:
-    refresh_token = request.cookies.get(refresh_token)
+    refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
         raise HTTPException(status_code=401, detail="Невалидный refresh token")
     try:
@@ -188,7 +184,7 @@ async def refresh(
 
 
 
-@router.post(
+@router.delete(
     "/user/delete_user",
     description="Удаление пользователя из базы данных",
     summary="Удаление пользователей из базы данных",
@@ -196,7 +192,6 @@ async def refresh(
         200: {"description": "Мероприятие успешно удалено"},
         500: {"description": "Мероприятие не было найдено"}
     }
-
 )
 async def delete_user(
         id: int,
@@ -236,8 +231,8 @@ async def change_data(
         if user_update.password != "string":
             user_data.password_hash = hashlib.sha256(user_update.password.encode()).hexdigest()
 
-        if user_update.phone != "string":
-            user_data.phone = user_update.phone
+        if user_update.email != "user@example.com":
+            user_data.email = user_update.email
 
         if user_update.preferences != [0]:
             user_data.preferences = user_update.preferences
@@ -248,3 +243,20 @@ async def change_data(
         await db_connect.refresh(user_data)
 
         return {"message": "Данные пользователя успешно изменены!"}
+
+
+@router.post(
+    "/user/get_all_users",
+    description="Получение всех пользователей из базы данных",
+    summary="Получение всех пользователей из базы данных",
+    responses={
+        200: {"description": "Все пользователи получены!"},
+        500: {"description": "Не удалось получить всех пользователей"}
+    }
+)
+async def get_all_users(db_connect: AsyncSession = Depends(get_db)):
+    user_data = (await db_connect.execute(select(User).filter(User.deleted_at.is_(None)))).scalars().all()
+    if not user_data:
+        raise HTTPException(status_code=404, detail="Пользователей нет в базе данных!")
+    else:
+        return user_data

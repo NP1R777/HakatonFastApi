@@ -1,14 +1,15 @@
 import uuid
 from datetime import datetime
 from typing_extensions import List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 
 
 class UserIn:
     class Create(BaseModel):
         username: str
         password: str
-        phone: str
+        email: EmailStr
+        date_of_birth: str
         preferences: List[int]
 
     class Login(BaseModel):
@@ -31,7 +32,8 @@ class UserOut:
 
     class Create(Base):
         username: str
-        phone: str
+        email: EmailStr
+        date_of_birth: str | None
         preferences: List[int]
 
     class Me(Base):
@@ -43,7 +45,8 @@ class UserOut:
 class UserUpdate(BaseModel):
     username: str | None
     password: str | None
-    phone: str | None
+    email: EmailStr | None
+    date_of_birth: str | None
     preferences: List[int] | None
 
 
