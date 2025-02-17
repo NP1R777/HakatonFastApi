@@ -50,6 +50,10 @@ class UserUpdate(BaseModel):
     preferences: List[int] | None
 
 
+class UserUpdatePreferences(BaseModel):
+    preferences: List[int] | None
+
+
 class TokenResponse(BaseModel):
     user_id: int
     username: str

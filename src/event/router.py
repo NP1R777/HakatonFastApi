@@ -1,9 +1,11 @@
-from sqlalchemy import select
+from asyncio import Event
 from core.session import get_db
+from typing import Optional, List
 from database.models import Events
+from sqlalchemy import select, desc
 from src.event.schemas import EventIn
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 router = APIRouter()
 
@@ -87,3 +89,46 @@ async def get_event_by_id(id: int,
         raise HTTPException(status_code=404, detail="Мероприятие не найдено!")
     else:
         return event
+
+
+@router.post(
+    '/event/sort_events',
+    description="Сортировка мероприятий во выбранным параметрам",
+    summary="Сортировка мероприятий по выбранным параметрам",
+    responses={
+        200: {"description": "Мероприятия отсортированы успешно!"},
+        500: {"description": "Во время сортировки произошла ошибка"}
+    }
+)
+async def sort_events(
+        sort_param: str,
+        sort_by: Optional[List[str]] = Query(None, description="Параметры сортировки: Дата, Категория, Город"),
+        db_connect: AsyncSession = Depends(get_db)):
+    events = (await db_connect.execute(select(Events))).scalars()
+    if not events:
+        raise HTTPException(status_code=404, detail="Мероприятий нет!")
+    else:
+        sort_columns = {
+            "Дата": Events.date_event,
+            "Категория": Events.group_id,
+            "Город": Events.city
+        }
+
+        num_city = {
+            "Норильск": 0,
+            "Талнах": 1,
+            "Кайеркан": 2,
+            "Оганер": 3,
+            "Дудинка": 4
+        }
+
+        sort_for_params = {
+            "Город": ["Норильск", "Талнах", "Кайеркан",  "Оганер", "Дудинка"]
+        }
+
+        if sort_by:
+            valid_sort_columns = [sort_columns[param] for param in sort_by if param in sort_columns]
+            if valid_sort_columns:
+                events_sort = ((await db_connect.execute(select(
+                    Events).order_by(desc(*valid_sort_columns)))).scalars().all())
+                return events_sort

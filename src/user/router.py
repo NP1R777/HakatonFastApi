@@ -6,10 +6,10 @@ from sqlalchemy import and_, select
 from core.settings import AppSettings
 from core.session import get_db, get_settings
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends, HTTPException, Response, Request
 from src.user.auth import create_refresh_token, create_access_token
-from src.user.schemas import UserIn, UserOut, TokenResponse, UserUpdate
+from fastapi import APIRouter, Depends, HTTPException, Response, Request
 from src.dependencies.autentification import get_token_payload, get_current_user
+from src.user.schemas import UserIn, UserOut, TokenResponse, UserUpdate, UserUpdatePreferences
 
 
 router = APIRouter()
@@ -113,7 +113,6 @@ async def login(
         )
 
 
-
 @router.post(
     "/user/me",
     dependencies=[Depends(get_token_payload)]
@@ -130,7 +129,6 @@ async def me(
         username=current_user.username,
         refresh_token=current_user.refresh_token,
     )
-
 
 
 @router.post(
@@ -181,7 +179,6 @@ async def refresh(
         )
     except JWTError:
         raise HTTPException(status_code=401, detail="Невалидный refresh token")
-
 
 
 @router.delete(
@@ -260,3 +257,30 @@ async def get_all_users(db_connect: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Пользователей нет в базе данных!")
     else:
         return user_data
+
+
+@router.post(
+    "/user/update_preferences",
+    description="Изменение избранных категорий пользователя",
+    summary="Изменение избранных категорий пользователя",
+    responses={
+        200: {"description": "Изменения прошли успешно!"},
+        500: {"description": "Во время внесения изменений произошла ошибка!"}
+    }
+)
+async def update_preferences(
+        id: int,
+        user_update: UserUpdatePreferences,
+        db_connect: AsyncSession = Depends(get_db),
+):
+    user_data = (await db_connect.execute(select(User).filter(User.id == id))).scalar()
+    if not user_data:
+        raise HTTPException(status_code=404, detail="Пользователь не был найден!")
+    else:
+        user_data.preferences = user_update.preferences
+
+        user_data.update_at = datetime.now()
+        await db_connect.commit()
+        await db_connect.refresh(user_data)
+
+        return {"message": "Избранные категории успешно изменены!"}
