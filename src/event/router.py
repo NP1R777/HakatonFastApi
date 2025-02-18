@@ -2,8 +2,8 @@ from asyncio import Event
 from core.session import get_db
 from typing import Optional, List
 from database.models import Events
-from sqlalchemy import select, desc
 from src.event.schemas import EventIn
+from sqlalchemy import select, desc, asc
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -64,8 +64,7 @@ async def create_event(
         500: {"description": "Не удалось получить все мероприятия."}
     }
 )
-async def get_all_events(param_sort: str,
-                         db_connect: AsyncSession = Depends(get_db)):
+async def get_all_events(db_connect: AsyncSession = Depends(get_db)):
     events = (await db_connect.execute(select(Events))).scalars().all()
     if not events:
         raise HTTPException(status_code=404, detail="Мероприятия не были найдены!")
@@ -102,7 +101,8 @@ async def get_event_by_id(id: int,
 )
 async def sort_events(
         sort_param: str,
-        sort_by: Optional[List[str]] = Query(None, description="Параметры сортировки: Дата, Категория, Город"),
+        up_or_down: bool,
+        sort_by: str = Query(None, description="Параметры сортировки: Дата, Категория, Город"),
         db_connect: AsyncSession = Depends(get_db)):
     events = (await db_connect.execute(select(Events))).scalars()
     if not events:
