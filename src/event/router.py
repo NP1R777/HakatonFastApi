@@ -56,7 +56,7 @@ async def create_event(
 
 
 @router.post(
-    '/event/get_all_events',
+    '/event/events',
     description="Получение всех мероприятий из базы данных",
     summary="Получение всех мероприятий из базы данных",
     responses={
@@ -114,13 +114,6 @@ async def sort_events(
             "Город": Events.city
         }
 
-        num_city = {
-            "Норильск": 0,
-            "Талнах": 1,
-            "Кайеркан": 2,
-            "Оганер": 3,
-            "Дудинка": 4
-        }
 
         sort_for_params = {
             "Город": ["Норильск", "Талнах", "Кайеркан",  "Оганер", "Дудинка"]
